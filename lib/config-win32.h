@@ -28,7 +28,7 @@
 /*               Hand crafted config file for Windows               */
 /* ================================================================ */
 
-#ifndef UNDER_CE
+#if !defined(UNDER_CE) && !defined(_XBOX)
 
 /* Define some minimum and default build targets for Visual Studio */
 #ifdef _MSC_VER
@@ -183,8 +183,12 @@
 /* Define to 1 if you have the getsockname function. */
 #define HAVE_GETSOCKNAME 1
 
+#ifndef _XBOX
 /* Define if you have the gethostname function. */
 #define HAVE_GETHOSTNAME 1
+#else
+#define gethostname Curl_gethostname
+#endif
 
 /* Define if you have the gettimeofday function. */
 #ifdef __MINGW32__
@@ -347,18 +351,106 @@
 #endif
 
 /* Windows XP is required for freeaddrinfo, getaddrinfo */
-#ifndef UNDER_CE
+#if !defined(UNDER_CE) && !defined(_XBOX)
 #define HAVE_FREEADDRINFO           1
 #define HAVE_GETADDRINFO            1
 #define HAVE_GETADDRINFO_THREADSAFE 1
 #endif
 
+
+#if defined(_XBOX) || defined(__USE_WINSOCK__)
+#include <XTL.h>
+#include <WinSockX.h>
+struct sockaddr_storage {
+#ifdef HAVE_SOCKADDR_SA_LEN
+  unsigned char ss_len;
+#endif /* HAVE_SOCKADDR_SA_LEN */
+  unsigned char ss_family;
+  unsigned char fill[127];
+};
+
+struct addrinfo {
+  int	ai_flags;	/* AI_PASSIVE, AI_CANONNAME */
+  int	ai_family;	/* PF_xxx */
+  int	ai_socktype;	/* SOCK_xxx */
+  int	ai_protocol;	/* 0 or IPPROTO_xxx for IPv4 and IPv6 */
+  size_t	ai_addrlen;	/* length of ai_addr */
+  char* ai_canonname;	/* canonical name for hostname */
+  struct sockaddr* ai_addr;	/* binary address */
+  struct addrinfo* ai_next;	/* next structure in linked list */
+};
+
+struct hostent
+{
+  char* h_name;       /* canonical name of host */
+  char** h_aliases;    /* alias list */
+  int    h_addrtype;   /* host address type */
+  int    h_length;     /* length of address */
+  char** h_addr_list;  /* list of addresses */
+#define h_addr h_addr_list[0]
+};
+
+// From OdameX
+struct hostent* gethostbyname(const char* name)
+{
+  static struct hostent* he = NULL;
+  unsigned long          addr = INADDR_NONE;
+  WSAEVENT               hEvent;
+  XNDNS* pDns = NULL;
+  INT                    err;
+
+  if (!name)
+    return NULL;
+
+  // This data is static and it should not be freed.
+  if (!he)
+  {
+    he = (struct hostent*)malloc(sizeof(struct hostent));
+    if (!he)
+    {
+      // Failed to allocate!
+      return NULL;
+    }
+
+    he->h_addr_list = (char**)malloc(sizeof(char*));
+    he->h_addr_list[0] = (char*)malloc(sizeof(struct in_addr));
+  }
+
+  if (isdigit(name[0]))
+    addr = inet_addr(name);
+
+  if (addr != INADDR_NONE)
+    *(int*)he->h_addr_list[0] = addr;
+  else
+  {
+    hEvent = WSACreateEvent();
+    err = XNetDnsLookup(name, hEvent, &pDns);
+
+    WaitForSingleObject((HANDLE)hEvent, INFINITE);
+
+    if (!pDns || pDns->iStatus != 0)
+      return NULL;
+
+    memcpy(he->h_addr_list[0], pDns->aina, sizeof(struct in_addr));
+
+    XNetDnsRelease(pDns);
+    WSACloseEvent(hEvent);
+  }
+
+  return he;
+}
+
+#endif
+
+
 /* ---------------------------------------------------------------- */
 /*                          STRUCT RELATED                          */
 /* ---------------------------------------------------------------- */
 
+#ifndef _XBOX
 /* Define if you have struct sockaddr_storage. */
 #define HAVE_STRUCT_SOCKADDR_STORAGE 1
+#endif
 
 /* Define if you have struct timeval. */
 #define HAVE_STRUCT_TIMEVAL 1
@@ -420,19 +512,19 @@
 #ifdef CURL_HAS_OPENLDAP_LDAPSDK
 #undef USE_WIN32_LDAP
 #define HAVE_LDAP_URL_PARSE 1
-#elif !defined(CURL_WINDOWS_UWP) && !defined(UNDER_CE)
+#elif !defined(CURL_WINDOWS_UWP) && !defined(UNDER_CE) && !defined(_XBOX)
 #undef HAVE_LDAP_URL_PARSE
 #define HAVE_LDAP_SSL 1
 #define USE_WIN32_LDAP 1
 #endif
 
 /* Define to use the Windows crypto library. */
-#ifndef CURL_WINDOWS_UWP
+#if !defined(CURL_WINDOWS_UWP) && !defined(_XBOX)
 #define USE_WIN32_CRYPTO
 #endif
 
 /* Define to use Unix sockets. */
-#ifndef UNDER_CE
+#if !defined(UNDER_CE) && !defined(_XBOX)
 #define USE_UNIX_SOCKETS
 #endif
 

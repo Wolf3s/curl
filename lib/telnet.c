@@ -1323,7 +1323,7 @@ static CURLcode telnet_do(struct Curl_easy *data, bool *done)
   CURLcode result;
   struct connectdata *conn = data->conn;
   curl_socket_t sockfd = conn->sock[FIRSTSOCKET];
-#ifdef USE_WINSOCK
+#if defined(USE_WINSOCK) && !defined(_XBOX)
   WSAEVENT event_handle;
   WSANETWORKEVENTS events;
   HANDLE stdin_handle;
@@ -1359,7 +1359,7 @@ static CURLcode telnet_do(struct Curl_easy *data, bool *done)
   if(result)
     return result;
 
-#ifdef USE_WINSOCK
+#if defined(USE_WINSOCK) && !defined(_XBOX)
   /* We want to wait for both stdin and the socket. Since
   ** the select() function in Winsock only works on sockets
   ** we have to use the WaitForMultipleObjects() call.

@@ -77,11 +77,15 @@
 #  if defined(_UNICODE) && !defined(UNICODE)
 #    error "_UNICODE is defined but UNICODE is not defined"
 #  endif
+#ifdef _XBOX
+#include <XTL.h>
+#else
 #  include <winsock2.h>
 #  include <ws2tcpip.h>
 #  include <windows.h>
 #  include <winerror.h>
 #  include <tchar.h>
+#endif
 #endif
 
 /*

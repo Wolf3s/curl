@@ -43,6 +43,7 @@
 wchar_t *curlx_convert_UTF8_to_wchar(const char *str_utf8)
 {
   wchar_t *str_w = NULL;
+#ifndef _XBOX
 
   if(str_utf8) {
     int str_w_len = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
@@ -59,6 +60,7 @@ wchar_t *curlx_convert_UTF8_to_wchar(const char *str_utf8)
     }
   }
 
+#endif // !_XBOX
   return str_w;
 }
 

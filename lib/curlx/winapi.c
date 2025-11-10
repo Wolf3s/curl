@@ -58,7 +58,7 @@ const char *curlx_get_winapi_error(DWORD err, char *buf, size_t buflen)
 
   *buf = '\0';
   *wbuf = L'\0';
-
+#ifndef _XBOX
   /* We return the local codepage version of the error string because if it is
      output to the user's terminal it will likely be with functions which
      expect the local codepage (eg fprintf, failf, infof).
@@ -72,6 +72,7 @@ const char *curlx_get_winapi_error(DWORD err, char *buf, size_t buflen)
     else
       *buf = '\0';
   }
+#endif
 
   /* Truncate multiple lines */
   p = strchr(buf, '\n');

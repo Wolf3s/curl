@@ -1324,7 +1324,7 @@ static CURLMcode multi_wait(struct Curl_multi *multi,
   CURLMcode result = CURLM_OK;
   unsigned int mid;
 
-#ifdef USE_WINSOCK
+#if defined(USE_WINSOCK) && !defined(_XBOX)
   WSANETWORKEVENTS wsa_events;
   DEBUGASSERT(multi->wsa_event != WSA_INVALID_EVENT);
 #endif
@@ -1384,7 +1384,7 @@ static CURLMcode multi_wait(struct Curl_multi *multi,
     }
   }
 
-#ifdef USE_WINSOCK
+#if defined(USE_WINSOCK) && !defined(_XBOX)
   /* Set the WSA events based on the collected pollds */
   for(i = 0; i < cpfds.n; i++) {
     long mask = 0;
@@ -1464,7 +1464,7 @@ static CURLMcode multi_wait(struct Curl_multi *multi,
       for(i = 0; i < extra_nfds; i++) {
         unsigned r = (unsigned)cpfds.pfds[curl_nfds + i].revents;
         unsigned short mask = 0;
-#ifdef USE_WINSOCK
+#if defined(USE_WINSOCK) && !defined(_XBOX)
         curl_socket_t s = extra_fds[i].fd;
         wsa_events.lNetworkEvents = 0;
         if(WSAEnumNetworkEvents(s, NULL, &wsa_events) == 0) {
@@ -1492,7 +1492,7 @@ static CURLMcode multi_wait(struct Curl_multi *multi,
         extra_fds[i].revents = (short)mask;
       }
 
-#ifdef USE_WINSOCK
+#if defined(USE_WINSOCK) && !defined(_XBOX)
       /* Count up all our own sockets that had activity,
          and remove them from the event. */
       for(i = 0; i < curl_nfds; ++i) {

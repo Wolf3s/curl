@@ -176,7 +176,7 @@ tcpkeepalive(struct Curl_easy *data,
              curl_socket_t sockfd)
 {
   int optval = data->set.tcp_keepalive ? 1 : 0;
-
+#ifndef _XBOX
   /* only set IDLE and INTVL if setting KEEPALIVE is successful */
   if(setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE,
                 (void *)&optval, sizeof(optval)) < 0) {
@@ -184,7 +184,9 @@ tcpkeepalive(struct Curl_easy *data,
           "%" FMT_SOCKET_T ": errno %d",
           sockfd, SOCKERRNO);
   }
-  else {
+  else
+#endif
+  {
 #ifdef SIO_KEEPALIVE_VALS /* Windows */
 /* Windows 10, version 1709 (10.0.16299) and later versions */
 #ifdef CURL_WINSOCK_KEEP_SSO
@@ -213,7 +215,9 @@ tcpkeepalive(struct Curl_easy *data,
     }
 #else /* Windows < 10.0.16299 */
     struct tcp_keepalive vals;
+#ifndef _XBOX
     DWORD dummy;
+#endif
     vals.onoff = 1;
     optval = curlx_sltosi(data->set.tcp_keepidle);
     KEEPALIVE_FACTOR(optval);
@@ -221,11 +225,13 @@ tcpkeepalive(struct Curl_easy *data,
     optval = curlx_sltosi(data->set.tcp_keepintvl);
     KEEPALIVE_FACTOR(optval);
     vals.keepaliveinterval = (u_long)optval;
+#ifndef _XBOX
     if(WSAIoctl(sockfd, SIO_KEEPALIVE_VALS, (LPVOID) &vals, sizeof(vals),
                 NULL, 0, &dummy, NULL, NULL) != 0) {
       infof(data, "Failed to set SIO_KEEPALIVE_VALS on fd "
             "%" FMT_SOCKET_T ": errno %d", sockfd, SOCKERRNO);
     }
+#endif
 #endif
 #else /* !Windows */
 #ifdef TCP_KEEPIDLE
@@ -1415,7 +1421,7 @@ static CURLcode cf_socket_adjust_pollset(struct Curl_cfilter *cf,
   return result;
 }
 
-#ifdef USE_WINSOCK
+#if defined(USE_WINSOCK) && !defined(_XBOX)
 
 /* Offered by mingw-w64 v13+. MS SDK 7.0A+. */
 #ifndef SIO_IDEAL_SEND_BACKLOG_QUERY
@@ -1517,7 +1523,7 @@ static CURLcode cf_socket_send(struct Curl_cfilter *cf, struct Curl_easy *data,
   else
     *pnwritten = (size_t)nwritten;
 
-#ifdef USE_WINSOCK
+#if defined(USE_WINSOCK) && !defined(_XBOX)
   if(!result)
     win_update_sndbuf_size(ctx);
 #endif

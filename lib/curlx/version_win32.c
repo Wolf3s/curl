@@ -111,7 +111,7 @@ bool curlx_verify_windows_version(const unsigned int majorVersion,
     /* we are always running on PLATFORM_WINNT */
     matched = FALSE;
   }
-#elif defined(UNDER_CE)
+#elif !defined(UNDER_CE) && defined(_XBOX)
   (void)majorVersion;
   (void)minorVersion;
   (void)buildVersion;

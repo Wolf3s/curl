@@ -77,7 +77,9 @@ WINBASEAPI DWORD WINAPI GetFullPathNameW(LPCWSTR, DWORD, LPWSTR, LPWSTR *);
  */
 static bool fix_excessive_path(const TCHAR *in, TCHAR **out)
 {
+#ifndef _XBOX
   size_t needed, count;
+#endif
   const wchar_t *in_w;
   wchar_t *fbuf = NULL;
 
@@ -90,10 +92,11 @@ static bool fix_excessive_path(const TCHAR *in, TCHAR **out)
 #endif
 
   *out = NULL;
-
+#ifndef _XBOX
   /* skip paths already normalized */
   if(!_tcsncmp(in, _T("\\\\?\\"), 4))
     goto cleanup;
+#endif
 
 #ifndef _UNICODE
   /* convert multibyte input to unicode */
@@ -112,6 +115,7 @@ static bool fix_excessive_path(const TCHAR *in, TCHAR **out)
   in_w = in;
 #endif
 
+#ifndef _XBOX
   /* GetFullPathNameW returns the normalized full path in unicode. It converts
      forward slashes to backslashes, processes .. to remove directory segments,
      etc. Unlike GetFullPathNameA it can process paths that exceed MAX_PATH. */
@@ -127,6 +131,7 @@ static bool fix_excessive_path(const TCHAR *in, TCHAR **out)
   count = (size_t)GetFullPathNameW(in_w, (DWORD)needed, fbuf, NULL);
   if(!count || count >= needed)
     goto cleanup;
+
 
   /* prepend \\?\ or \\?\UNC\ to the excessively long path.
    *
@@ -178,6 +183,7 @@ static bool fix_excessive_path(const TCHAR *in, TCHAR **out)
     (free)(fbuf);
     fbuf = temp;
   }
+#endif
 
 #ifndef _UNICODE
   /* convert unicode full path to multibyte output */
@@ -197,9 +203,10 @@ static bool fix_excessive_path(const TCHAR *in, TCHAR **out)
   *out = fbuf;
   fbuf = NULL;
 #endif
-
+#ifndef _XBOX
 cleanup:
   (free)(fbuf);
+#endif
 #ifndef _UNICODE
   (free)(ibuf);
   (free)(obuf);
